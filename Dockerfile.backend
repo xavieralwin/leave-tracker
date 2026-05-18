@@ -1,0 +1,17 @@
+# Use Node.js for running the backend API
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install only production dependencies
+COPY backend/package*.json ./
+RUN npm ci --omit=dev
+
+# Copy the backend files
+COPY backend/ ./
+
+# Expose the API port
+EXPOSE 5000
+
+# Run the Node Express server directly
+CMD ["node", "server.js"]

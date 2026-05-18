@@ -1,0 +1,9 @@
+{
+  "name": "leave-tracker-deploy",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "webhook": "node deploy/webhook-listener.js"
+  }
+}

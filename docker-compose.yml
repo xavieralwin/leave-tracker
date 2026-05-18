@@ -1,0 +1,22 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: leave-tracker-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "8082:8080"
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: leave-tracker-backend
+    restart: unless-stopped
+    environment:
+      - PORT=5000
+    volumes:
+      - ./backend/leaves.sqlite:/app/leaves.sqlite
