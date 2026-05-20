@@ -3,15 +3,15 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Install only production dependencies
-COPY backend/package*.json ./
+# Install only production dependencies (skip frontend dev tools)
+COPY package*.json ./
 RUN npm ci --omit=dev
 
-# Copy the backend files
-COPY backend/ ./
+# Copy the server directory
+COPY server/ ./server/
 
 # Expose the API port
 EXPOSE 5000
 
 # Run the Node Express server directly
-CMD ["node", "server.js"]
+CMD ["node", "server/index.js"]

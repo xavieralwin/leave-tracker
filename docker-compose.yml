@@ -19,4 +19,4 @@ services:
     environment:
       - PORT=5000
     volumes:
-      - ./backend/leaves.sqlite:/app/leaves.sqlite
+      - ./server/leaves.sqlite:/app/server/leaves.sqlite
