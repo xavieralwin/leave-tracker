@@ -7,7 +7,7 @@ const sqlite3Verbose = sqlite3.verbose();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const dbPath = path.resolve(__dirname, 'leaves.sqlite');
+const dbPath = path.resolve(__dirname, 'data', 'leaves.sqlite');
 
 const db = new sqlite3Verbose.Database(dbPath, (err) => {
   if (err) {
