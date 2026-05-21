@@ -1,11 +1,18 @@
 # Use Node.js for running the backend API
 FROM node:20-slim
 
+# Install build tools needed to compile native addons (like sqlite3)
+RUN apt-get update && apt-get install -y \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 # Install only production dependencies (skip frontend dev tools)
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev --build-from-source
 
 # Copy the server directory
 COPY server/ ./server/
