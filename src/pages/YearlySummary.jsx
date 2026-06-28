@@ -1,34 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { getLeaves, deleteLeave } from '../api';
 import { parseISO } from 'date-fns';
 import { Download, Search, Trash2, Calendar } from 'lucide-react';
 
 export default function YearlySummary() {
   const [leaves, setLeaves] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
-    fetchLeaves();
-  }, []);
-
-  const fetchLeaves = async () => {
-    try {
-      const data = await getLeaves();
-      setLeaves(data);
-    } catch (error) {
-      console.error("Error fetching leaves", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    let mounted = true;
+    getLeaves().then(data => {
+      if (mounted) {
+        setLeaves(data);
+      }
+    }).catch(err => {
+      console.error("Error fetching leaves", err);
+    });
+    return () => { mounted = false; };
+  }, [refreshTrigger]);
 
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this leave record?')) {
       try {
         await deleteLeave(id);
-        fetchLeaves();
+        setRefreshTrigger(prev => prev + 1);
       } catch (error) {
         console.error("Error deleting leave", error);
       }
@@ -77,17 +74,17 @@ export default function YearlySummary() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-black text-white tracking-tight">Yearly Summary</h1>
-          <p className="text-slate-400 mt-1">Leave balances and history for {selectedYear}</p>
+          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">Yearly Summary</h1>
+          <p className="text-xs sm:text-sm text-slate-400 mt-1">Leave balances and history for {selectedYear}</p>
         </div>
-        <div className="flex space-x-4">
-          <div className="relative">
+        <div className="flex space-x-3 w-full sm:w-auto">
+          <div className="relative flex-1 sm:flex-initial">
             <select 
               value={selectedYear}
               onChange={e => setSelectedYear(parseInt(e.target.value))}
-              className="appearance-none input-field py-2.5 pr-10 font-bold text-white bg-[#1d202f] border-white/10 shadow-lg shadow-black/20"
+              className="appearance-none input-field py-2.5 pr-10 font-bold text-white bg-[#1d202f] border-white/10 shadow-lg shadow-black/20 w-full"
             >
               {years.map(y => (
                 <option key={y} value={y}>{y}</option>
@@ -97,7 +94,7 @@ export default function YearlySummary() {
               <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
             </div>
           </div>
-          <button className="btn-secondary flex items-center shadow-lg shadow-black/20 bg-[#1d202f]">
+          <button className="btn-secondary flex items-center justify-center shadow-lg shadow-black/20 bg-[#1d202f] flex-1 sm:flex-initial">
             <Download className="w-4 h-4 mr-2" />
             Export CSV
           </button>
@@ -107,23 +104,23 @@ export default function YearlySummary() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 flex-1">
         
         {/* Summary Table */}
-        <div className="lg:col-span-2 glass-panel p-6 flex flex-col h-[calc(100vh-10rem)]">
-          <div className="flex justify-between items-center mb-6">
+        <div className="lg:col-span-2 glass-panel p-6 flex flex-col h-auto lg:h-[calc(100vh-10rem)]">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <h3 className="text-xl font-bold text-white">Team Members</h3>
-            <div className="relative">
+            <div className="relative w-full sm:w-auto">
               <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 transform -translate-y-1/2" />
               <input 
                 type="text" 
                 placeholder="Search name..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className="input-field pl-9 py-2 text-sm w-64 bg-[#151722] border-white/5"
+                className="input-field pl-9 py-2 text-sm w-full sm:w-64 bg-[#151722] border-white/5"
               />
             </div>
           </div>
           
-          <div className="flex-1 overflow-auto rounded-xl border border-white/5 bg-[#151722]/50 custom-scrollbar">
-            <table className="w-full text-left border-collapse">
+          <div className="flex-1 overflow-x-auto overflow-y-auto rounded-xl border border-white/5 bg-[#151722]/50 custom-scrollbar w-full">
+            <table className="w-full text-left border-collapse min-w-[600px]">
               <thead className="bg-[#1d202f] sticky top-0 border-b border-white/5 z-10 shadow-sm">
                 <tr>
                   <th className="py-4 px-6 font-bold text-xs uppercase tracking-wider text-slate-400">Employee Name</th>
@@ -168,17 +165,17 @@ export default function YearlySummary() {
         </div>
 
         {/* Recent Leave History */}
-        <div className="lg:col-span-1 glass-panel p-6 flex flex-col h-[calc(100vh-10rem)]">
+        <div className="lg:col-span-1 glass-panel p-6 flex flex-col h-auto lg:h-[calc(100vh-10rem)]">
           <h3 className="text-xl font-bold text-white mb-6 flex items-center">
             <Calendar className="w-5 h-5 mr-2 text-blue-400 drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
             Recent Records
           </h3>
-          <div className="flex-1 overflow-y-auto pr-2 space-y-4 custom-scrollbar">
+          <div className="flex-1 lg:overflow-y-auto pr-2 space-y-4 custom-scrollbar max-h-[400px] lg:max-h-none overflow-y-auto">
             {leaves.slice().reverse().map(leave => (
               <div key={leave.id} className="p-4 rounded-xl border border-white/5 bg-[#25293c]/50 hover:bg-[#25293c] transition-all group relative hover:border-white/10 hover:shadow-lg">
                 <button 
                   onClick={() => handleDelete(leave.id)}
-                  className="absolute top-4 right-4 text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity bg-[#151722] p-1.5 rounded-lg"
+                  className="absolute top-4 right-4 text-slate-500 hover:text-red-400 lg:opacity-0 lg:group-hover:opacity-100 opacity-100 transition-opacity bg-[#151722] p-1.5 rounded-lg"
                   title="Delete Record"
                 >
                   <Trash2 className="w-4 h-4" />

@@ -1,7 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import db from './db.js';
-import { format, eachMonthOfInterval, startOfYear, endOfYear, getMonth } from 'date-fns';
 
 const app = express();
 app.use(cors());

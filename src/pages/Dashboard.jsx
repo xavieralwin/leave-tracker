@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, 
   isSameMonth, isSameDay, addDays, parseISO
@@ -24,22 +24,19 @@ export default function Dashboard() {
   const [leaves, setLeaves] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({ name: '', startDate: '', endDate: '', reason: '', type: 'CL' });
-  const [loading, setLoading] = useState(true);
-
-  const fetchLeaves = async () => {
-    try {
-      const data = await getLeaves();
-      setLeaves(data);
-    } catch (error) {
-      console.error("Error fetching leaves", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
-    fetchLeaves();
-  }, []);
+    let mounted = true;
+    getLeaves().then(data => {
+      if (mounted) {
+        setLeaves(data);
+      }
+    }).catch(err => {
+      console.error("Error fetching leaves", err);
+    });
+    return () => { mounted = false; };
+  }, [refreshTrigger]);
 
   const handlePrevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
   const handleNextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
@@ -51,7 +48,7 @@ export default function Dashboard() {
       await addLeave(formData);
       setIsModalOpen(false);
       setFormData({ name: '', startDate: '', endDate: '', reason: '', type: 'CL' });
-      fetchLeaves();
+      setRefreshTrigger(prev => prev + 1);
     } catch (error) {
       console.error("Error adding leave", error);
     }
@@ -71,9 +68,9 @@ export default function Dashboard() {
   const renderHeader = () => {
     return (
       <div className="flex justify-between items-center mb-6 px-2">
-        <h2 className="text-xl font-black text-white tracking-tight flex items-center gap-3">
-          <div className="p-2.5 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-xl shadow-[0_0_20px_rgba(59,130,246,0.3)]">
-             <CalendarIcon className="w-5 h-5 text-white" />
+        <h2 className="text-lg sm:text-xl font-black text-white tracking-tight flex items-center gap-2 sm:gap-3">
+          <div className="p-2 sm:p-2.5 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-xl shadow-[0_0_20px_rgba(59,130,246,0.3)]">
+             <CalendarIcon className="w-4 h-4 sm:w-5 h-5 text-white" />
           </div>
           {format(currentMonth, 'MMMM yyyy')}
         </h2>
@@ -114,11 +111,10 @@ export default function Dashboard() {
     const rows = [];
     let days = [];
     let day = startDate;
-    let formattedDate = "";
 
     while (day <= endDate) {
       for (let i = 0; i < 7; i++) {
-        formattedDate = format(day, dateFormat);
+        const formattedDate = format(day, dateFormat);
         const cloneDay = day;
         const dayLeaves = leaves.filter(l => isDateInLeave(cloneDay, l));
         
@@ -128,7 +124,7 @@ export default function Dashboard() {
 
         days.push(
           <div
-            className={`min-h-[65px] p-1 m-0.5 rounded-xl cursor-pointer transition-all duration-300 border ${
+            className={`min-h-[50px] sm:min-h-[75px] p-1 sm:p-1.5 m-0.5 rounded-xl cursor-pointer transition-all duration-300 border ${
               !isCurrentMonth
                 ? "bg-transparent border-transparent opacity-20"
                 : isSelected
@@ -147,13 +143,14 @@ export default function Dashboard() {
                 {formattedDate}
               </span>
               {dayLeaves.length > 2 && (
-                <span className="text-[9px] font-bold text-slate-300 bg-[#2a2e42] px-1.5 py-0.5 rounded-full border border-white/5">
+                <span className="hidden sm:inline-block text-[9px] font-bold text-slate-300 bg-[#2a2e42] px-1.5 py-0.5 rounded-full border border-white/5">
                   +{dayLeaves.length - 2}
                 </span>
               )}
             </div>
             
-            <div className="space-y-1">
+            {/* Desktop View: Text Chips */}
+            <div className="hidden sm:block space-y-1">
               {dayLeaves.slice(0, 2).map((l, idx) => (
                 <div 
                   key={idx} 
@@ -165,6 +162,17 @@ export default function Dashboard() {
                   <div className={`w-1.5 h-1.5 rounded-full bg-gradient-to-r ${LeaveTypeGradients[l.type]} shrink-0`} />
                   <span className="truncate">{l.name}</span>
                 </div>
+              ))}
+            </div>
+
+            {/* Mobile View: Dots */}
+            <div className="flex sm:hidden flex-wrap gap-1 justify-center mt-1">
+              {dayLeaves.map((l, idx) => (
+                <div 
+                  key={idx} 
+                  className={`w-1.5 h-1.5 rounded-full bg-gradient-to-r ${LeaveTypeGradients[l.type]} shadow-sm`}
+                  title={`${l.name} (${l.type})`}
+                />
               ))}
             </div>
           </div>
@@ -186,21 +194,21 @@ export default function Dashboard() {
       
       {/* Calendar Section */}
       <div className="xl:col-span-3 flex flex-col">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div>
             <h1 className="text-2xl font-black text-white tracking-tight">Team Overview</h1>
             <p className="text-xs text-slate-400 mt-1 font-medium">Manage and track your team's leaves</p>
           </div>
           <button 
             onClick={() => setIsModalOpen(true)}
-            className="btn-primary flex items-center"
+            className="btn-primary flex items-center w-full sm:w-auto justify-center"
           >
             <Plus className="w-4 h-4 mr-1.5" />
             Add Record
           </button>
         </div>
         
-        <div className="glass-panel p-6">
+        <div className="glass-panel p-4 sm:p-6">
           {renderHeader()}
           {renderDays()}
           {renderCells()}
@@ -208,8 +216,8 @@ export default function Dashboard() {
       </div>
 
       {/* Details Section */}
-      <div className="xl:col-span-1 flex flex-col h-[calc(100vh-8rem)]">
-        <div className="glass-panel p-5 flex-1 flex flex-col sticky top-8">
+      <div className="xl:col-span-1 flex flex-col h-auto xl:h-[calc(100vh-8rem)]">
+        <div className="glass-panel p-5 flex-1 flex flex-col xl:sticky xl:top-8">
           <div className="text-center mb-6 pb-5 border-b border-white/5">
             <h3 className="text-lg font-black text-white tracking-tight">
               {format(selectedDate, 'MMM do, yyyy')}
@@ -224,7 +232,7 @@ export default function Dashboard() {
             </div>
           </div>
           
-          <div className="flex-1 overflow-y-auto space-y-3 pr-1 custom-scrollbar">
+          <div className="flex-1 xl:overflow-y-auto space-y-3 pr-1 custom-scrollbar max-h-[300px] xl:max-h-none overflow-y-auto">
             {leavesOnSelectedDate.length > 0 ? (
               leavesOnSelectedDate.map(leave => (
                 <div key={leave.id} className={`p-3 rounded-2xl border transition-all hover:scale-[1.02] ${LeaveTypeColors[leave.type]}`}>
