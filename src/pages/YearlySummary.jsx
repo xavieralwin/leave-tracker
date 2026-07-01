@@ -70,6 +70,39 @@ export default function YearlySummary() {
 
   const summaryData = processSummaryData();
 
+  const handleExportCSV = () => {
+    const headers = ['Employee Name', 'Casual (CL)', 'Comp Off', 'Medical (ML)', 'WFH', 'Total'];
+    const rows = summaryData.map(row => [
+      row.name,
+      row.CL,
+      row.CompOff,
+      row.ML,
+      row.WFH,
+      row.Total
+    ]);
+    
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(e => e.map(val => {
+        const stringVal = String(val);
+        if (stringVal.includes(',') || stringVal.includes('"') || stringVal.includes('\n')) {
+          return `"${stringVal.replace(/"/g, '""')}"`;
+        }
+        return stringVal;
+      }).join(','))
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `leave_summary_${selectedYear}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const currentYear = new Date().getFullYear();
   const years = Array.from({length: 5}, (_, i) => currentYear - 2 + i);
 
@@ -95,7 +128,10 @@ export default function YearlySummary() {
               <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
             </div>
           </div>
-          <button className="btn-secondary flex items-center justify-center shadow-lg shadow-black/20 bg-[#1d202f] flex-1 sm:flex-initial">
+          <button 
+            onClick={handleExportCSV}
+            className="btn-secondary flex items-center justify-center shadow-lg shadow-black/20 bg-[#1d202f] flex-1 sm:flex-initial"
+          >
             <Download className="w-4 h-4 mr-2" />
             Export CSV
           </button>
