@@ -10,12 +10,21 @@ const LeaveTypeColors = {
   'CL': 'bg-[#25293c] text-blue-400 border-blue-500/20 shadow-[0_4px_20px_rgba(59,130,246,0.15)]',
   'CompOff': 'bg-[#25293c] text-teal-400 border-teal-500/20 shadow-[0_4px_20px_rgba(20,184,166,0.15)]',
   'ML': 'bg-[#25293c] text-purple-400 border-purple-500/20 shadow-[0_4px_20px_rgba(168,85,247,0.15)]',
+  'WFH': 'bg-[#25293c] text-orange-400 border-orange-500/20 shadow-[0_4px_20px_rgba(249,115,22,0.15)]',
 };
 
 const LeaveTypeGradients = {
   'CL': 'from-blue-500 to-cyan-400',
   'CompOff': 'from-teal-400 to-emerald-500',
   'ML': 'from-purple-500 to-pink-500',
+  'WFH': 'from-orange-500 to-amber-400',
+};
+
+const LeaveTypeChipClasses = {
+  'CL': 'border-l-blue-500 text-blue-300',
+  'CompOff': 'border-l-teal-500 text-teal-300',
+  'ML': 'border-l-purple-500 text-purple-300',
+  'WFH': 'border-l-orange-500 text-orange-300',
 };
 
 export default function Dashboard() {
@@ -155,9 +164,7 @@ export default function Dashboard() {
                 <div 
                   key={idx} 
                   className={`text-[9px] font-medium truncate px-1.5 py-0.5 rounded-md border-l-2 bg-[#1d202f] shadow-sm flex items-center gap-1
-                    ${l.type === 'CL' ? 'border-l-blue-500 text-blue-300' : 
-                      l.type === 'CompOff' ? 'border-l-teal-500 text-teal-300' : 
-                      'border-l-purple-500 text-purple-300'}`}
+                    ${LeaveTypeChipClasses[l.type] || 'border-l-slate-500 text-slate-300'}`}
                 >
                   <div className={`w-1.5 h-1.5 rounded-full bg-gradient-to-r ${LeaveTypeGradients[l.type]} shrink-0`} />
                   <span className="truncate">{l.name}</span>
@@ -325,8 +332,8 @@ export default function Dashboard() {
               
               <div>
                 <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">Leave Type</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {['CL', 'CompOff', 'ML'].map(type => (
+                <div className="grid grid-cols-4 gap-2">
+                  {['CL', 'CompOff', 'ML', 'WFH'].map(type => (
                     <button
                       key={type}
                       type="button"

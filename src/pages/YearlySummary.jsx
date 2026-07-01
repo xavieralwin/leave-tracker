@@ -49,7 +49,7 @@ export default function YearlySummary() {
 
     filteredLeaves.forEach(leave => {
       if (!summary[leave.name]) {
-        summary[leave.name] = { CL: 0, CompOff: 0, ML: 0, Total: 0 };
+        summary[leave.name] = { CL: 0, CompOff: 0, ML: 0, WFH: 0, Total: 0 };
       }
       
       const duration = getLeaveDuration(leave.startDate, leave.endDate);
@@ -57,6 +57,7 @@ export default function YearlySummary() {
       if (leave.type === 'CL') summary[leave.name].CL += duration;
       else if (leave.type === 'CompOff') summary[leave.name].CompOff += duration;
       else if (leave.type === 'ML') summary[leave.name].ML += duration;
+      else if (leave.type === 'WFH') summary[leave.name].WFH += duration;
       
       summary[leave.name].Total += duration;
     });
@@ -127,6 +128,7 @@ export default function YearlySummary() {
                   <th className="py-4 px-6 font-bold text-xs uppercase tracking-wider text-slate-400 text-center">Casual (CL)</th>
                   <th className="py-4 px-6 font-bold text-xs uppercase tracking-wider text-slate-400 text-center">Comp Off</th>
                   <th className="py-4 px-6 font-bold text-xs uppercase tracking-wider text-slate-400 text-center">Medical (ML)</th>
+                  <th className="py-4 px-6 font-bold text-xs uppercase tracking-wider text-slate-400 text-center">WFH</th>
                   <th className="py-4 px-6 font-bold text-xs uppercase tracking-wider text-blue-400 text-center">Total</th>
                 </tr>
               </thead>
@@ -147,6 +149,9 @@ export default function YearlySummary() {
                     </td>
                     <td className="py-4 px-6 text-center">
                       <span className="bg-purple-500/10 text-purple-400 px-3 py-1 rounded-lg text-sm font-bold border border-purple-500/20">{row.ML}</span>
+                    </td>
+                    <td className="py-4 px-6 text-center">
+                      <span className="bg-orange-500/10 text-orange-400 px-3 py-1 rounded-lg text-sm font-bold border border-orange-500/20">{row.WFH}</span>
                     </td>
                     <td className="py-4 px-6 text-center font-black text-white text-lg">
                       {row.Total}
