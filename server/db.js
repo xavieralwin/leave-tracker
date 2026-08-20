@@ -1,5 +1,6 @@
 import sqlite3 from 'sqlite3';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 
 const sqlite3Verbose = sqlite3.verbose();
@@ -7,7 +8,12 @@ const sqlite3Verbose = sqlite3.verbose();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const dbPath = path.resolve(__dirname, 'data', 'leaves.sqlite');
+const dataDir = path.resolve(__dirname, 'data');
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true });
+}
+
+const dbPath = path.join(dataDir, 'leaves.sqlite');
 
 const db = new sqlite3Verbose.Database(dbPath, (err) => {
   if (err) {
