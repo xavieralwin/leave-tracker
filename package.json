@@ -4,12 +4,12 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "start": "concurrently \"vite\" \"node server/index.js\"",
-    "dev": "concurrently \"vite\" \"node server/index.js\"",
+    "start": "concurrently \"vite\" \"node --watch server/index.js\"",
+    "dev": "concurrently \"vite\" \"node --watch server/index.js\"",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "server": "node server/index.js",
+    "server": "node --watch server/index.js",
     "webhook": "node deploy/webhook-listener.js"
   },
   "dependencies": {

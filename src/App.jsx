@@ -1,12 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { Calendar, Users, Menu, X } from 'lucide-react';
+import { Calendar, Users, Menu, X, LogOut, KeyRound, Lock } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import YearlySummary from './pages/YearlySummary';
+import LockScreen from './components/LockScreen';
+import ChangePasswordModal from './components/ChangePasswordModal';
+import { checkIsUnlocked, lockSite } from './api';
 
-function Layout({ children }) {
+function Layout({ children, onLock }) {
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   
   const navItems = [
     { name: 'Calendar Dashboard', path: '/', icon: <Calendar className="w-5 h-5 mr-3" /> },
@@ -25,25 +29,44 @@ function Layout({ children }) {
             Leave Tracker
           </h1>
         </div>
-        <button 
-          onClick={() => setIsSidebarOpen(true)}
-          className="p-2 -mr-2 rounded-lg hover:bg-white/5 text-slate-400 hover:text-white transition-colors"
-        >
-          <Menu className="w-6 h-6" />
-        </button>
+        <div className="flex items-center space-x-1">
+          <button
+            onClick={() => setIsPasswordModalOpen(true)}
+            className="p-2 rounded-lg hover:bg-white/5 text-slate-400 hover:text-white transition-colors"
+            title="Change Password"
+          >
+            <KeyRound className="w-5 h-5" />
+          </button>
+          <button
+            onClick={onLock}
+            className="p-2 rounded-lg hover:bg-white/5 text-slate-400 hover:text-red-400 transition-colors"
+            title="Lock Site"
+          >
+            <Lock className="w-5 h-5" />
+          </button>
+          <button 
+            onClick={() => setIsSidebarOpen(true)}
+            className="p-2 -mr-2 rounded-lg hover:bg-white/5 text-slate-400 hover:text-white transition-colors"
+          >
+            <Menu className="w-6 h-6" />
+          </button>
+        </div>
       </header>
 
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex w-64 bg-[#1d202f] border-r border-white/5 flex-col z-10 shadow-[4px_0_24px_rgba(0,0,0,0.2)]">
-        <div className="h-20 flex items-center px-6 border-b border-white/5">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center text-white font-black text-xl mr-3 shadow-[0_0_15px_rgba(59,130,246,0.4)]">
-            L
+        <div className="h-20 flex items-center px-6 border-b border-white/5 justify-between">
+          <div className="flex items-center">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center text-white font-black text-xl mr-3 shadow-[0_0_15px_rgba(59,130,246,0.4)]">
+              L
+            </div>
+            <h1 className="text-xl font-black text-white tracking-tight">
+              Leave Tracker
+            </h1>
           </div>
-          <h1 className="text-xl font-black text-white tracking-tight">
-            Leave Tracker
-          </h1>
         </div>
-        <nav className="flex-1 px-4 py-8 space-y-3">
+
+        <nav className="flex-1 px-4 py-8 space-y-2">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
@@ -64,18 +87,36 @@ function Layout({ children }) {
             );
           })}
         </nav>
-        <div className="p-4 border-t border-white/5 text-[11px] font-medium text-slate-500 text-center uppercase tracking-wider">
-          Team Leave Tracker © 2026
+
+        {/* Sidebar Footer Controls */}
+        <div className="p-4 border-t border-white/5 space-y-2">
+          <button
+            onClick={() => setIsPasswordModalOpen(true)}
+            className="w-full flex items-center px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+          >
+            <KeyRound className="w-4 h-4 mr-3 text-slate-500" />
+            Change Password
+          </button>
+
+          <button
+            onClick={onLock}
+            className="w-full flex items-center px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all"
+          >
+            <LogOut className="w-4 h-4 mr-3 text-slate-500" />
+            Lock & Exit
+          </button>
+
+          <div className="pt-2 text-[10px] font-medium text-slate-500 text-center uppercase tracking-wider">
+            Protected Workspace © 2026
+          </div>
         </div>
       </aside>
 
-      {/* Mobile Drawer (visible only on mobile when opened) */}
-      {/* Backdrop */}
+      {/* Mobile Drawer */}
       <div 
         className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
         onClick={() => setIsSidebarOpen(false)}
       />
-      {/* Drawer container */}
       <aside className={`fixed inset-y-0 left-0 w-64 bg-[#1d202f] z-50 flex flex-col shadow-[4px_0_24px_rgba(0,0,0,0.4)] md:hidden transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="h-16 flex items-center justify-between px-6 border-b border-white/5">
           <div className="flex items-center">
@@ -93,7 +134,8 @@ function Layout({ children }) {
             <X className="w-5 h-5" />
           </button>
         </div>
-        <nav className="flex-1 px-4 py-6 space-y-3">
+        
+        <nav className="flex-1 px-4 py-6 space-y-2">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
@@ -115,14 +157,34 @@ function Layout({ children }) {
             );
           })}
         </nav>
-        <div className="p-4 border-t border-white/5 text-[11px] font-medium text-slate-500 text-center uppercase tracking-wider">
-          Team Leave Tracker © 2026
+
+        <div className="p-4 border-t border-white/5 space-y-2">
+          <button
+            onClick={() => {
+              setIsSidebarOpen(false);
+              setIsPasswordModalOpen(true);
+            }}
+            className="w-full flex items-center px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+          >
+            <KeyRound className="w-4 h-4 mr-3 text-slate-500" />
+            Change Password
+          </button>
+
+          <button
+            onClick={() => {
+              setIsSidebarOpen(false);
+              onLock();
+            }}
+            className="w-full flex items-center px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all"
+          >
+            <LogOut className="w-4 h-4 mr-3 text-slate-500" />
+            Lock & Exit
+          </button>
         </div>
       </aside>
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto bg-[#151722] relative">
-        {/* Subtle background decoration */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-blue-900/10 to-transparent" />
           <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-600/10 rounded-full blur-[100px]" />
@@ -132,14 +194,35 @@ function Layout({ children }) {
           {children}
         </div>
       </main>
+
+      {/* Change Password Modal */}
+      <ChangePasswordModal
+        isOpen={isPasswordModalOpen}
+        onClose={() => setIsPasswordModalOpen(false)}
+      />
     </div>
   );
 }
 
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(() => checkIsUnlocked());
+
+  const handleUnlock = () => {
+    setIsAuthenticated(true);
+  };
+
+  const handleLock = () => {
+    lockSite();
+    setIsAuthenticated(false);
+  };
+
+  if (!isAuthenticated) {
+    return <LockScreen onUnlock={handleUnlock} />;
+  }
+
   return (
     <Router>
-      <Layout>
+      <Layout onLock={handleLock}>
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/yearly-summary" element={<YearlySummary />} />

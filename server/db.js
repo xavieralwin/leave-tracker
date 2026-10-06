@@ -29,9 +29,20 @@ const db = new sqlite3Verbose.Database(dbPath, (err) => {
         type TEXT NOT NULL
     )`, (err) => {
         if (err) {
-            console.error('Error creating table', err.message);
+            console.error('Error creating leaves table', err.message);
         } else {
             console.log('Leaves table ready.');
+        }
+    });
+
+    db.run(`CREATE TABLE IF NOT EXISTS settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+    )`, (err) => {
+        if (err) {
+            console.error('Error creating settings table', err.message);
+        } else {
+            console.log('Settings table ready.');
         }
     });
   }
