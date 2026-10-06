@@ -9,17 +9,31 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const dataDir = path.resolve(__dirname, 'data');
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
-}
+const primaryDbPath = path.join(dataDir, 'leaves.sqlite');
+const fallbackDbPath = path.resolve(__dirname, 'leaves.sqlite');
 
-const dbPath = path.join(dataDir, 'leaves.sqlite');
+let dbPath = primaryDbPath;
+
+try {
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+  }
+
+  // If data/leaves.sqlite does not exist, but initial server/leaves.sqlite exists, seed it!
+  if (!fs.existsSync(primaryDbPath) && fs.existsSync(fallbackDbPath)) {
+    fs.copyFileSync(fallbackDbPath, primaryDbPath);
+    console.log('Seeded database from initial leaves.sqlite into data/leaves.sqlite');
+  }
+} catch (e) {
+  console.warn('Could not initialize data directory, using fallback path', e);
+  dbPath = fallbackDbPath;
+}
 
 const db = new sqlite3Verbose.Database(dbPath, (err) => {
   if (err) {
     console.error('Error opening database', err.message);
   } else {
-    console.log('Connected to the SQLite database.');
+    console.log('Connected to SQLite database at:', dbPath);
     db.run(`CREATE TABLE IF NOT EXISTS leaves (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,

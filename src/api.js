@@ -39,13 +39,21 @@ export const verifyPassword = (inputPassword) => {
 
 // Leaves API Calls
 export const getLeaves = async () => {
-  const response = await axios.get(`${API_URL}/leaves`);
-  return response.data.data;
+  try {
+    const response = await axios.get(`${API_URL}/leaves`);
+    if (response.data && Array.isArray(response.data.data)) {
+      return response.data.data;
+    }
+    return [];
+  } catch (err) {
+    console.error('Error fetching leaves:', err);
+    return [];
+  }
 };
 
 export const addLeave = async (leaveData) => {
   const response = await axios.post(`${API_URL}/leaves`, leaveData);
-  return response.data.data;
+  return response.data?.data || response.data;
 };
 
 export const deleteLeave = async (id) => {

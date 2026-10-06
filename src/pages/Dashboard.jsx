@@ -41,10 +41,11 @@ export default function Dashboard() {
     let mounted = true;
     getLeaves().then(data => {
       if (mounted) {
-        setLeaves(data);
+        setLeaves(Array.isArray(data) ? data : []);
       }
     }).catch(err => {
       console.error("Error fetching leaves", err);
+      if (mounted) setLeaves([]);
     });
     return () => { mounted = false; };
   }, [refreshTrigger]);
