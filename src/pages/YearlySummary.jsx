@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
 import { getLeaves, deleteLeave } from '../api';
 import { parseISO } from 'date-fns';
-import { Download, Search, Trash2, Calendar } from 'lucide-react';
+import { Download, Search, Trash2, Calendar, FileText, ChevronDown } from 'lucide-react';
+import ExportReportModal from '../components/ExportReportModal';
 
 export default function YearlySummary() {
   const [leaves, setLeaves] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [showQuickMenu, setShowQuickMenu] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -70,6 +73,47 @@ export default function YearlySummary() {
 
   const summaryData = processSummaryData();
 
+  const handleExportDetailedCSV = () => {
+    const filteredLeaves = leaves.filter(l => {
+      const startYear = parseISO(l.startDate).getFullYear();
+      const endYear = parseISO(l.endDate).getFullYear();
+      return startYear === selectedYear || endYear === selectedYear;
+    });
+
+    const headers = ['Employee Name', 'Leave Type', 'Start Date', 'End Date', 'Duration (Days)', 'Reason'];
+    const rows = filteredLeaves.map(l => [
+      l.name,
+      l.type,
+      l.startDate,
+      l.endDate,
+      getLeaveDuration(l.startDate, l.endDate),
+      l.reason || ''
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(e => e.map(val => {
+        const stringVal = String(val ?? '');
+        if (stringVal.includes(',') || stringVal.includes('"') || stringVal.includes('\n')) {
+          return `"${stringVal.replace(/"/g, '""')}"`;
+        }
+        return `"${stringVal}"`;
+      }).join(','))
+    ].join('\r\n');
+
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `person_leaves_with_dates_${selectedYear}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    setShowQuickMenu(false);
+  };
+
   const handleExportCSV = () => {
     const headers = ['Employee Name', 'Casual (CL)', 'Comp Off', 'Medical (ML)', 'WFH', 'Total'];
     const rows = summaryData.map(row => [
@@ -92,7 +136,7 @@ export default function YearlySummary() {
       }).join(','))
     ].join('\n');
     
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
@@ -101,6 +145,8 @@ export default function YearlySummary() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    setShowQuickMenu(false);
   };
 
   const currentYear = new Date().getFullYear();
@@ -113,7 +159,7 @@ export default function YearlySummary() {
           <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">Yearly Summary</h1>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">Leave balances and history for {selectedYear}</p>
         </div>
-        <div className="flex space-x-3 w-full sm:w-auto">
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
           <div className="relative flex-1 sm:flex-initial">
             <select 
               value={selectedYear}
@@ -128,13 +174,68 @@ export default function YearlySummary() {
               <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
             </div>
           </div>
-          <button 
-            onClick={handleExportCSV}
-            className="btn-secondary flex items-center justify-center shadow-lg shadow-black/20 bg-[#1d202f] flex-1 sm:flex-initial"
-          >
-            <Download className="w-4 h-4 mr-2" />
-            Export CSV
-          </button>
+
+          <div className="relative flex-1 sm:flex-initial flex items-stretch">
+            <button 
+              onClick={() => setIsExportModalOpen(true)}
+              className="btn-primary flex items-center justify-center rounded-r-none shadow-lg shadow-blue-500/20"
+            >
+              <Download className="w-4 h-4 mr-1.5" />
+              Download Report
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowQuickMenu(!showQuickMenu)}
+              className="px-2.5 bg-gradient-to-r from-cyan-400 to-cyan-500 text-white rounded-r-xl font-bold transition-all hover:brightness-110 active:scale-95 border-l border-white/20 flex items-center justify-center"
+              title="Quick Download Options"
+            >
+              <ChevronDown className="w-4 h-4" />
+            </button>
+
+            {/* Quick Export Dropdown */}
+            {showQuickMenu && (
+              <div 
+                className="absolute right-0 top-12 w-64 bg-[#1d202f] border border-white/10 rounded-2xl shadow-2xl z-30 p-2 animate-in fade-in zoom-in-95 duration-150"
+                onMouseLeave={() => setShowQuickMenu(false)}
+              >
+                <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-white/5">
+                  Quick Download ({selectedYear})
+                </div>
+                <button
+                  onClick={handleExportDetailedCSV}
+                  className="w-full text-left px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-200 hover:bg-blue-500/10 hover:text-blue-400 flex items-center gap-2.5 transition-colors mt-1"
+                >
+                  <FileText className="w-4 h-4 text-blue-400 shrink-0" />
+                  <div>
+                    <div className="font-bold">Leaves with Dates (CSV)</div>
+                    <span className="text-[10px] text-slate-400 font-normal">Person name, date ranges, reasons</span>
+                  </div>
+                </button>
+                <button
+                  onClick={handleExportCSV}
+                  className="w-full text-left px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-200 hover:bg-purple-500/10 hover:text-purple-400 flex items-center gap-2.5 transition-colors"
+                >
+                  <Download className="w-4 h-4 text-purple-400 shrink-0" />
+                  <div>
+                    <div className="font-bold">Summary Totals (CSV)</div>
+                    <span className="text-[10px] text-slate-400 font-normal">Totals per leave type</span>
+                  </div>
+                </button>
+                <div className="border-t border-white/5 mt-1 pt-1">
+                  <button
+                    onClick={() => {
+                      setShowQuickMenu(false);
+                      setIsExportModalOpen(true);
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-cyan-400 hover:bg-[#25293c] transition-colors flex items-center justify-between"
+                  >
+                    <span>Custom Filter & Print</span>
+                    <span>→</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -245,6 +346,15 @@ export default function YearlySummary() {
         </div>
         
       </div>
+
+      {/* Export Report Modal */}
+      <ExportReportModal 
+        isOpen={isExportModalOpen} 
+        onClose={() => setIsExportModalOpen(false)} 
+        leaves={leaves} 
+        defaultYear={selectedYear} 
+      />
     </div>
   );
 }
+

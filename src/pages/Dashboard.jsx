@@ -3,8 +3,9 @@ import {
   format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, 
   isSameMonth, isSameDay, addDays, parseISO
 } from 'date-fns';
-import { ChevronLeft, ChevronRight, Plus, X, Calendar as CalendarIcon, User, Tag } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, X, Calendar as CalendarIcon, User, Tag, Download } from 'lucide-react';
 import { getLeaves, addLeave } from '../api';
+import ExportReportModal from '../components/ExportReportModal';
 
 const LeaveTypeColors = {
   'CL': 'bg-[#25293c] text-blue-400 border-blue-500/20 shadow-[0_4px_20px_rgba(59,130,246,0.15)]',
@@ -32,6 +33,7 @@ export default function Dashboard() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [leaves, setLeaves] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [formData, setFormData] = useState({ name: '', startDate: '', endDate: '', reason: '', type: 'CL' });
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
@@ -206,13 +208,22 @@ export default function Dashboard() {
             <h1 className="text-2xl font-black text-white tracking-tight">Team Overview</h1>
             <p className="text-xs text-slate-400 mt-1 font-medium">Manage and track your team's leaves</p>
           </div>
-          <button 
-            onClick={() => setIsModalOpen(true)}
-            className="btn-primary flex items-center w-full sm:w-auto justify-center"
-          >
-            <Plus className="w-4 h-4 mr-1.5" />
-            Add Record
-          </button>
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <button
+              onClick={() => setIsExportModalOpen(true)}
+              className="btn-secondary flex items-center justify-center flex-1 sm:flex-initial"
+            >
+              <Download className="w-4 h-4 mr-1.5 text-slate-400" />
+              Download Report
+            </button>
+            <button 
+              onClick={() => setIsModalOpen(true)}
+              className="btn-primary flex items-center justify-center flex-1 sm:flex-initial"
+            >
+              <Plus className="w-4 h-4 mr-1.5" />
+              Add Record
+            </button>
+          </div>
         </div>
         
         <div className="glass-panel p-4 sm:p-6">
@@ -379,6 +390,14 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* Export Report Modal */}
+      <ExportReportModal 
+        isOpen={isExportModalOpen} 
+        onClose={() => setIsExportModalOpen(false)} 
+        leaves={leaves} 
+        defaultYear={currentMonth.getFullYear()} 
+      />
     </div>
   );
 }
