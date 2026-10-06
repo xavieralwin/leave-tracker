@@ -1,19 +1,26 @@
-# Use Node.js for running the backend API (Debian slim for official prebuilt binary compatibility)
+# Use Node.js Debian slim
 FROM node:20-slim
+
+# Install build tools to compile native sqlite3 addon against container's GLIBC
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 # Copy package manifests
 COPY package*.json ./
 
-# Install production dependencies using pre-compiled binaries in seconds
-RUN npm ci --omit=dev
+# Compile sqlite3 native addon for container's exact glibc version
+RUN npm ci --omit=dev --build-from-source=sqlite3
 
-# Copy the server directory
+# Copy backend server code
 COPY server/ ./server/
 
-# Expose the API port
+# Expose API port
 EXPOSE 5000
 
-# Run the Node Express server directly
+# Start backend server
 CMD ["node", "server/index.js"]
